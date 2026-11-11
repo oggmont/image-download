@@ -144,8 +144,5 @@ src/test/java/org/ogm/imagedownload/
   ImageDownloaderTest.java   unit tests (local HTTP server)
   RunDownloadTest.java       console download as a "run button" test
 REQUIREMENTS.md          what the app must do, including privacy limits
-.vscode/                 launch configurations (F5 opens the window), tasks and settings
+.vscode/                 launch configurations, tasks and settings
 ```
-
-Git-ignored files that live in the project root: `download.local.properties` (your config),
-`ui.local.properties` (last inputs typed in the window), `download-requests.log` and `downloads/`.
