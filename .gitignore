@@ -1,5 +1,6 @@
-# Build output
+# Build output (image-download.jar is rebuilt with ./mvnw package)
 target/
+/image-download.jar
 
 # Downloaded images
 downloads/

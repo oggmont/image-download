@@ -28,6 +28,8 @@
     </dependencies>
 
     <build>
+        <!-- ./mvnw package writes image-download.jar to the project root: double-click it to open the window. -->
+        <finalName>image-download</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -49,6 +51,7 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.4.2</version>
                 <configuration>
+                    <outputDirectory>${project.basedir}</outputDirectory>
                     <archive>
                         <manifest>
                             <mainClass>${main.class}</mainClass>

@@ -15,6 +15,11 @@ The full list of requirements, including what the privacy measures do and don't 
 
 From an IDE, run `org.ogm.imagedownload.DownloaderApp` as a Java application.
 
+To launch it with a double-click, run `./mvnw -q package` once. That builds `image-download.jar` in this folder
+(it's git-ignored, so rebuild it after you change the code). When the app starts from the jar, it reads and writes
+`download.local.properties`, `ui.local.properties`, `download-requests.log` and `downloads/` next to the jar,
+whatever the working directory is.
+
 ## The window
 
 ```
@@ -121,7 +126,7 @@ The console version, `Main`, uses the same engine and the same log, with values 
 ./mvnw -q compile exec:java                                # opens the window
 ./mvnw -q compile exec:java -Dexec.mainClass=org.ogm.imagedownload.Main -Dexec.args="start=0 end=9"
 ./mvnw test -Pdownload                                     # console download via RunDownloadTest
-./mvnw -q package -DskipTests && java -jar target/image-download-1.0.0-SNAPSHOT.jar   # window from the jar
+./mvnw -q package -DskipTests && java -jar image-download.jar   # builds ./image-download.jar (double-clickable)
 ```
 
 `./mvnw` downloads Maven the first time it runs, so you don't need to install Maven yourself.

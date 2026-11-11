@@ -153,7 +153,7 @@ public record DownloadConfig(
                 Integer.parseInt(get(p, "start", "0")),
                 Integer.parseInt(get(p, "end", "999")),
                 Integer.parseInt(get(p, "padding", "4")),
-                Path.of(get(p, "output.dir", "downloads")),
+                AppDir.resolve(get(p, "output.dir", "downloads")),
                 Duration.ofMillis(Long.parseLong(get(p, "delay.ms", "1500"))),
                 Duration.ofMillis(Long.parseLong(get(p, "delay.jitter.ms", "1500"))),
                 Boolean.parseBoolean(get(p, "overwrite", "true")),
@@ -163,7 +163,7 @@ public record DownloadConfig(
                 headers,
                 cookies,
                 get(p, "proxy", ""),
-                log.equalsIgnoreCase("none") ? null : Path.of(log));
+                log.equalsIgnoreCase("none") ? null : AppDir.resolve(log));
     }
 
     /**
@@ -183,7 +183,7 @@ public record DownloadConfig(
                 p.load(in);
             }
         }
-        loadFile(p, Path.of("download.local.properties"));
+        loadFile(p, AppDir.resolve("download.local.properties"));
 
         Map<String, String> cli = new LinkedHashMap<>();
         for (String arg : args) {

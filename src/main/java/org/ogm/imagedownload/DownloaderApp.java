@@ -53,7 +53,7 @@ import org.ogm.imagedownload.DownloadResult.Status;
 public final class DownloaderApp {
 
     /** Last values typed in the window, restored on the next launch. Git-ignored (it holds the real URL). */
-    static final Path INPUTS_FILE = Path.of("ui.local.properties");
+    static final Path INPUTS_FILE = AppDir.resolve("ui.local.properties");
     private static final int HISTORY_LINES = 500;
     private static final Color OK = new Color(0x2E7D32);
     private static final Color WARN = new Color(0xB26A00);
