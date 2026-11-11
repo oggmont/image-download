@@ -8,13 +8,13 @@
     <artifactId>image-download</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>image-download</name>
-    <description>Downloads a numbered series of images (name_0000.jpg ... name_0999.jpg) from a URL template.</description>
+    <description>Desktop window that downloads a numbered series of images (name_0000.jpg ... name_0999.jpg).</description>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.3</junit.version>
-        <main.class>org.ogm.imagedownload.Main</main.class>
+        <main.class>org.ogm.imagedownload.DownloaderApp</main.class>
     </properties>
 
     <!-- No runtime dependencies: HTTP is done with the JDK's built-in java.net.http.HttpClient. -->

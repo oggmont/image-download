@@ -3,7 +3,9 @@ package org.ogm.imagedownload;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -20,7 +22,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.ogm.imagedownload.DownloadResult.Status;
@@ -32,7 +34,7 @@ import org.ogm.imagedownload.DownloadResult.Status;
  *   <li>build the local file name and the remote URL from their templates</li>
  *   <li>URL-decode the URL and re-encode it properly</li>
  *   <li>HTTP GET it; on 200 stream the body to the output folder, otherwise skip that number</li>
- *   <li>wait {@code delay} before the next request</li>
+ *   <li>wait {@code delay} plus a random part of {@code delayJitter} before the next request</li>
  * </ol>
  * A failure on one number never stops the run; it is recorded in the {@link Summary}.
  */
@@ -42,6 +44,21 @@ public final class ImageDownloader {
     @FunctionalInterface
     interface Sleeper {
         void sleep(Duration d) throws InterruptedException;
+    }
+
+    /** Progress callbacks. They run on the download thread. Only {@link #onResult} is required. */
+    @FunctionalInterface
+    public interface Listener {
+        /** Called just before a number is requested (not called for skipped files). */
+        default void beforeRequest(int number, String url, Path file) {
+        }
+
+        /** Called after every number with its outcome. */
+        void onResult(DownloadResult result);
+
+        /** Called before the pause between two requests. */
+        default void beforeDelay(Duration delay) {
+        }
     }
 
     private static final Duration MIN_RETRY_BACKOFF = Duration.ofSeconds(1);
@@ -61,14 +78,19 @@ public final class ImageDownloader {
     }
 
     private static HttpClient defaultClient(DownloadConfig config) {
-        return HttpClient.newBuilder()
+        HttpClient.Builder b = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(config.timeout())
-                .build();
+                .connectTimeout(config.timeout());
+        if (!config.proxy().isEmpty()) {
+            int colon = config.proxy().lastIndexOf(':');
+            b.proxy(ProxySelector.of(InetSocketAddress.createUnresolved(
+                    config.proxy().substring(0, colon), Integer.parseInt(config.proxy().substring(colon + 1)))));
+        }
+        return b.build();
     }
 
-    /** Runs the whole series. {@code onEach} is called after every number (for progress output). */
-    public Summary run(Consumer<DownloadResult> onEach) throws IOException {
+    /** Runs the whole series, reporting progress to {@code listener}. Interrupting the thread stops it. */
+    public Summary run(Listener listener) throws IOException {
         Files.createDirectories(config.outputDir());
         List<DownloadResult> results = new ArrayList<>(config.count());
         int consecutiveMisses = 0;
@@ -77,14 +99,14 @@ public final class ImageDownloader {
         for (int n = config.start(); n <= config.end(); n++) {
             DownloadResult result;
             try {
-                result = downloadOne(n);
+                result = downloadOne(n, listener);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 interrupted = true;
                 break;
             }
             results.add(result);
-            onEach.accept(result);
+            listener.onResult(result);
 
             consecutiveMisses = result.status() == Status.NOT_FOUND ? consecutiveMisses + 1 : 0;
             if (config.stopAfterMisses() > 0 && consecutiveMisses >= config.stopAfterMisses()) {
@@ -92,9 +114,11 @@ public final class ImageDownloader {
             }
 
             // Pause only between real requests, as the original did after each download.
-            if (n < config.end() && result.status() != Status.SKIPPED && !config.delay().isZero()) {
+            Duration pause = nextDelay();
+            if (n < config.end() && result.status() != Status.SKIPPED && !pause.isZero()) {
+                listener.beforeDelay(pause);
                 try {
-                    sleeper.sleep(config.delay());
+                    sleeper.sleep(pause);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     interrupted = true;
@@ -108,6 +132,10 @@ public final class ImageDownloader {
 
     /** Downloads a single number. */
     public DownloadResult downloadOne(int number) throws InterruptedException {
+        return downloadOne(number, r -> { });
+    }
+
+    private DownloadResult downloadOne(int number, Listener listener) throws InterruptedException {
         String rawUrl = config.urlFor(number);
         Path target = config.outputDir().resolve(config.fileNameFor(number));
 
@@ -122,6 +150,7 @@ public final class ImageDownloader {
             return new DownloadResult(number, rawUrl, target, Status.FAILED, 0, "bad URL: " + e.getMessage());
         }
 
+        listener.beforeRequest(number, uri.toString(), target);
         HttpRequest request = buildRequest(uri);
         String lastError = "";
         int lastStatus = 0;
@@ -166,6 +195,13 @@ public final class ImageDownloader {
                     .collect(Collectors.joining("; ")));
         }
         return b.build();
+    }
+
+    /** {@code delay} plus a random amount in {@code [0, delayJitter]}, so requests don't arrive like a metronome. */
+    Duration nextDelay() {
+        long jitter = config.delayJitter().toMillis();
+        return jitter == 0 ? config.delay()
+                : config.delay().plusMillis(ThreadLocalRandom.current().nextLong(jitter + 1));
     }
 
     private Duration backoff(int attempt) {

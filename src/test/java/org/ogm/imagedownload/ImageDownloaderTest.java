@@ -37,6 +37,7 @@ class ImageDownloaderTest {
     private final Map<String, byte[]> files = new ConcurrentHashMap<>();
     private final List<String> requested = new CopyOnWriteArrayList<>();
     private final List<String> cookieHeaders = new CopyOnWriteArrayList<>();
+    private final List<String> userAgents = new CopyOnWriteArrayList<>();
     private final AtomicInteger flakyFailuresLeft = new AtomicInteger();
     private final List<Duration> sleeps = new ArrayList<>();
 
@@ -50,6 +51,7 @@ class ImageDownloaderTest {
             if (cookie != null) {
                 cookieHeaders.add(cookie);
             }
+            userAgents.add(String.valueOf(exchange.getRequestHeaders().getFirst("User-Agent")));
             if (path.startsWith("/flaky") && flakyFailuresLeft.getAndDecrement() > 0) {
                 exchange.sendResponseHeaders(503, -1);
                 exchange.close();
@@ -79,7 +81,7 @@ class ImageDownloaderTest {
     private DownloadConfig config(String urlTemplate, int start, int end, boolean overwrite, int stopAfterMisses,
             Map<String, String> cookies) {
         return new DownloadConfig(urlTemplate, "name_{n}.jpg", start, end, 4, out, Duration.ofMillis(300),
-                overwrite, 2, Duration.ofSeconds(5), stopAfterMisses, Map.of(), cookies);
+                Duration.ZERO, overwrite, 2, Duration.ofSeconds(5), stopAfterMisses, Map.of(), cookies, "", null);
     }
 
     private ImageDownloader downloader(DownloadConfig c) {
@@ -186,15 +188,95 @@ class ImageDownloaderTest {
         assertEquals("name_0230.jpg", c.fileNameFor(230));
         assertEquals("https://test.com/media/b/r/name/1000/brewi_0230.jpg", c.urlFor(230));
         assertEquals(Path.of("downloads"), c.outputDir());
-        assertEquals(Duration.ofMillis(300), c.delay());
+        assertEquals(Duration.ofMillis(1500), c.delay());
+        assertEquals(Duration.ofMillis(1500), c.delayJitter());
+        assertEquals(Path.of("download-requests.log"), c.logFile());
+        assertEquals("", c.proxy());
     }
 
     @Test
     void cliArgumentsOverrideDefaults() throws IOException {
-        DownloadConfig c = DownloadConfig.load("end=9", "--padding=3", "header.User-Agent=test-agent");
+        DownloadConfig c = DownloadConfig.load("end=9", "--padding=3", "header.user-agent=test-agent");
         assertEquals(10, c.count());
         assertEquals("name_007.jpg", c.fileNameFor(7));
-        assertEquals(Map.of("User-Agent", "test-agent"), c.headers());
+        assertEquals("test-agent", c.headers().get("user-agent"));
+        assertFalse(c.headers().containsKey("User-Agent"), "configured header replaces the default, any case");
+        assertTrue(c.headers().containsKey("Accept-Language"), "other defaults are kept");
+    }
+
+    @Test
+    void sendsBrowserUserAgentInsteadOfJavaOne() throws IOException {
+        files.put("/a_0000.jpg", bytes("x"));
+
+        downloader(config(base + "/a_{n}.jpg", 0, 0, true, 0, Map.of())).run(r -> { });
+
+        assertEquals(1, userAgents.size());
+        assertTrue(userAgents.get(0).startsWith("Mozilla/5.0"), userAgents.get(0));
+        assertFalse(userAgents.get(0).contains("Java"), userAgents.get(0));
+        assertFalse(userAgents.get(0).contains("Mac"), userAgents.get(0));
+    }
+
+    @Test
+    void uiInputsMapToTheOriginalLoop() {
+        // urlToDownload + String.format("%04d", i) + ".jpg"  and  prefix + "_" + format + ".jpg"
+        DownloadConfig c = DownloadConfig.fromProperties(new java.util.Properties())
+                .forRun("https://h.com/x/brewi_", "brewi", 5, 7);
+        assertEquals("https://h.com/x/brewi_0005.jpg", c.urlFor(5));
+        assertEquals("brewi_0007.jpg", c.fileNameFor(7));
+        assertEquals(3, c.count());
+        assertEquals("a_{n}.jpg", DownloadConfig.fileTemplateFromPrefix("a_"));
+        assertEquals("a", DownloadConfig.filePrefixFromTemplate(DownloadConfig.fileTemplateFromPrefix("a")));
+        assertEquals("https://h/b_", DownloadConfig.urlBaseFromTemplate(DownloadConfig.urlTemplateFromBase("https://h/b_")));
+    }
+
+    @Test
+    void delayIsRandomizedWithinJitter() {
+        DownloadConfig c = new DownloadConfig(base + "/a_{n}.jpg", "a_{n}.jpg", 0, 1, 4, out, Duration.ofMillis(100),
+                Duration.ofMillis(50), true, 0, Duration.ofSeconds(5), 0, Map.of(), Map.of(), "", null);
+        ImageDownloader d = downloader(c);
+        for (int i = 0; i < 200; i++) {
+            long ms = d.nextDelay().toMillis();
+            assertTrue(ms >= 100 && ms <= 150, "delay " + ms);
+        }
+    }
+
+    @Test
+    void listenerSeesEachRequestAndPause() throws IOException {
+        files.put("/a_0000.jpg", bytes("x"));
+        List<String> events = new ArrayList<>();
+
+        downloader(config(base + "/a_{n}.jpg", 0, 1, true, 0, Map.of())).run(new ImageDownloader.Listener() {
+            @Override public void beforeRequest(int n, String url, Path file) { events.add("request " + n); }
+            @Override public void onResult(DownloadResult r) { events.add("result " + r.number() + " " + r.status()); }
+            @Override public void beforeDelay(Duration pause) { events.add("pause " + pause.toMillis()); }
+        });
+
+        assertEquals(List.of("request 0", "result 0 DOWNLOADED", "pause 300", "request 1", "result 1 NOT_FOUND"),
+                events);
+    }
+
+    @Test
+    void requestLogRecordsEveryRequest() throws IOException {
+        files.put("/a_0000.jpg", bytes("x"));
+        DownloadConfig c = config(base + "/a_{n}.jpg", 0, 1, true, 0, Map.of());
+        RequestLog log = new RequestLog(out.resolve("requests.log"));
+
+        log.start(c);
+        log.finish(downloader(c).run(log::log));
+
+        List<String> lines = Files.readAllLines(out.resolve("requests.log"));
+        assertTrue(lines.get(1).contains("run started"), lines.toString());
+        assertTrue(lines.get(2).contains("#0  DOWNLOADED 200  GET " + base + "/a_0000.jpg"), lines.get(2));
+        assertTrue(lines.get(3).contains("NOT_FOUND  404"), lines.get(3));
+        assertTrue(lines.get(4).contains("1 downloaded, 0 skipped, 1 not found, 0 failed"), lines.get(4));
+    }
+
+    @Test
+    void rejectsBadProxy() {
+        java.util.Properties p = new java.util.Properties();
+        p.setProperty("proxy", "not a proxy");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> DownloadConfig.fromProperties(p));
     }
 
     private static byte[] bytes(String s) {

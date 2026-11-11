@@ -4,8 +4,10 @@ target/
 # Downloaded images
 downloads/
 
-# Personal config (real URLs, cookies, tokens)
+# Personal config and history (real URLs, cookies, tokens)
 download.local.properties
+ui.local.properties
+download-requests.log
 
 # Claude Code
 CLAUDE.md

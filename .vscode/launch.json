@@ -1,11 +1,21 @@
 {
-  // Run and Debug panel (⇧⌘D) → pick one → ▶ (or F5).
-  // Values given in "args" override download.properties / download.local.properties.
+  // Press F5 (or the ▶ in the Run and Debug panel, ⇧⌘D) to open the Image Downloader window.
+  // The first configuration is the default one.
   "version": "0.2.0",
   "configurations": [
     {
       "type": "java",
-      "name": "Download images",
+      "name": "Image Downloader (UI)",
+      "request": "launch",
+      "mainClass": "org.ogm.imagedownload.DownloaderApp",
+      "projectName": "image-download",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole"
+    },
+    {
+      // No window: downloads with the values in download.local.properties.
+      "type": "java",
+      "name": "Console: download configured series",
       "request": "launch",
       "mainClass": "org.ogm.imagedownload.Main",
       "projectName": "image-download",
@@ -14,27 +24,7 @@
     },
     {
       "type": "java",
-      "name": "Download images (resume, skip existing)",
-      "request": "launch",
-      "mainClass": "org.ogm.imagedownload.Main",
-      "projectName": "image-download",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "args": "overwrite=false"
-    },
-    {
-      "type": "java",
-      "name": "Download images (quick check: first 10)",
-      "request": "launch",
-      "mainClass": "org.ogm.imagedownload.Main",
-      "projectName": "image-download",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "args": "start=0 end=9"
-    },
-    {
-      "type": "java",
-      "name": "Download images (ask for range)",
+      "name": "Console: ask for range",
       "request": "launch",
       "mainClass": "org.ogm.imagedownload.Main",
       "projectName": "image-download",

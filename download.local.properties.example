@@ -1,5 +1,6 @@
 # Copy this file to download.local.properties (git-ignored) and edit it.
 # Only the keys you set override the defaults in src/main/resources/download.properties.
+# The window starts from these values; after that it remembers what you type (ui.local.properties).
 
 url.template=https://test.com/media/b/r/name/1000/brewi_{n}.jpg
 # second series from the original code:
@@ -9,7 +10,10 @@ start=0
 end=999
 output.dir=downloads
 
+# delay.ms=3000
+# delay.jitter.ms=3000
 # overwrite=false
 # stop.after.misses=20
-# header.User-Agent=Mozilla/5.0
+# proxy=127.0.0.1:8118
+# header.Referer=https://test.com/
 # cookie.session_id=...

@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.ogm.imagedownload.DownloadResult.Status;
 
 /**
- * Entry point. In VS Code, click "Run" above {@link #main} or pick a configuration in Run and Debug.
+ * Console version (no window). The normal way to use the project is the window: {@link DownloaderApp}.
  *
  * <p>Arguments are optional {@code key=value} overrides, e.g. {@code start=0 end=9 delay.ms=500}.
  * See README.md for all keys.
@@ -23,6 +23,8 @@ public final class Main {
     public static int run(String... args) throws IOException {
         DownloadConfig config = DownloadConfig.load(args);
         printHeader(config);
+        RequestLog log = new RequestLog(config.logFile());
+        log.start(config);
 
         int total = config.count();
         int width = Integer.toString(total).length();
@@ -30,11 +32,13 @@ public final class Main {
         long startedAt = System.nanoTime();
 
         ImageDownloader.Summary summary = new ImageDownloader(config).run(r -> {
+            log.log(r);
             index[0]++;
             System.out.printf("[%" + width + "d/%d] %-8s %-24s %s%n",
                     index[0], total, label(r.status()), r.file().getFileName(), r.detail());
         });
 
+        log.finish(summary);
         printSummary(summary, System.nanoTime() - startedAt);
         return summary.hasFailures() || summary.interrupted() ? 1 : 0;
     }
@@ -45,9 +49,11 @@ public final class Main {
         System.out.println("  File     : " + c.fileNameTemplate());
         System.out.println("  Range    : " + c.pad(c.start()) + " .. " + c.pad(c.end()) + " (" + c.count() + " files)");
         System.out.println("  Folder   : " + c.outputDir().toAbsolutePath());
-        System.out.println("  Delay    : " + c.delay().toMillis() + " ms, retries: " + c.retries()
+        System.out.println("  Delay    : " + c.delay().toMillis() + "-" + c.delay().plus(c.delayJitter()).toMillis()
+                + " ms, retries: " + c.retries()
                 + ", overwrite: " + c.overwrite()
                 + (c.stopAfterMisses() > 0 ? ", stop after " + c.stopAfterMisses() + " misses" : ""));
+        System.out.println("  Log      : " + (c.logFile() == null ? "off" : c.logFile().toAbsolutePath()));
         System.out.println();
     }
 

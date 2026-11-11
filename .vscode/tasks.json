@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Download images (Maven)",
+      "label": "Open Image Downloader (Maven)",
       "type": "shell",
       "command": "./mvnw -q compile exec:java",
       "problemMatcher": []

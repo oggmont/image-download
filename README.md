@@ -1,112 +1,151 @@
 # image-download
 
-Downloads a numbered series of images, such as `brewi_0000.jpg` up to `brewi_0999.jpg`, into a local folder.
-You can run it with one click in VS Code, or from the command line.
+A small desktop window that downloads a numbered series of images, such as `brewi_0000.jpg` up to
+`brewi_0999.jpg`, into `downloads/`. You launch it with one click from VS Code, type four values and click
+**Download**. While it runs, it shows each result and the latest image.
 
-The project needs Java 17 or newer and has no runtime dependencies. It uses the JDK's built-in HTTP client.
+It needs Java 17 or newer. It has no runtime dependencies: the window is Swing and HTTP uses the JDK's built-in client.
+The full list of requirements, including what the privacy measures do and don't cover, is in
+[REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Quick start (VS Code)
 
 1. Install a JDK, version 17 or newer (`java -version`), and the **Extension Pack for Java**
    (`vscjava.vscode-java-pack`). VS Code suggests the extension pack when you open the folder.
 2. Open this folder in VS Code and wait for "Java: Ready" in the status bar.
-3. Copy `download.local.properties.example` to `download.local.properties` and set your `url.template`.
-4. Run it in any of these ways:
+3. Press **F5**. "Image Downloader (UI)" is the first configuration in Run and Debug (⇧⌘D), so it's the one that runs.
+   You can also click **Run** above `main` in `DownloaderApp.java`.
 
-| How | Where |
-|---|---|
-| **▶ Run** link above `main` | `src/main/java/org/ogm/imagedownload/Main.java` |
-| **▶** next to the test, like a JUnit test | `src/test/java/org/ogm/imagedownload/RunDownloadTest.java`, or the Testing panel (beaker icon) |
-| **Run and Debug** panel (⇧⌘D), then pick a configuration and press F5 | `.vscode/launch.json`: *Download images*, *resume*, *first 10*, *ask for range* |
-| **Terminal → Run Task…** | `.vscode/tasks.json`: *Download images (Maven)*, *Unit tests*, *Build jar* |
+## The window
 
-The images are saved to `downloads/` in the project root. That folder is git-ignored.
-
-## Command line
-
-```bash
-./mvnw test                                                # unit tests only (no network)
-./mvnw test -Pdownload                                     # the real download, same as the IDE test button
-./mvnw -q compile exec:java                                # run Main
-./mvnw -q compile exec:java -Dexec.args="start=0 end=9"    # with overrides
-
-./mvnw -q package -DskipTests
-java -jar target/image-download-1.0.0-SNAPSHOT.jar end=9 overwrite=false
+```
+┌ Inputs ──────────────────────────────────────────────────────────────────────┐
+│ Initial i         [0      ]  first number of the loop                        │
+│ Last i            [999    ]  last number, inclusive                          │
+│ File name prefix  [brewi  ]  saved as <prefix>_0000.jpg in downloads/        │
+│ URL to download   [https://…/1000/brewi_ ]  0000.jpg, 0001.jpg … is appended │
+│ First: GET https://…/brewi_0000.jpg → downloads/brewi_0000.jpg (1000 images) │
+│ [Download] [Stop] [Reset inputs] [Open folder]                               │
+├ Requests ─────────────────────────────┬ Latest image ────────────────────────┤
+│ OK       brewi_0000.jpg  image/jpeg…  │                                      │
+│ MISSING  brewi_0001.jpg  HTTP 404     │            (image preview)           │
+│ OK       brewi_0002.jpg  image/jpeg…  │  brewi_0002.jpg · 1000×1500 · 182 KB │
+├───────────────────────────────────────┴──────────────────────────────────────┤
+│ OK #0002 brewi_0002.jpg (image/jpeg, 182.4 KB) | next request in 2.3 s  3/1000│
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-`./mvnw` downloads Maven the first time it runs, so you don't need to install Maven yourself.
+| Input | Meaning |
+|---|---|
+| **Initial i** | First number of the loop. |
+| **Last i** | Last number, **inclusive**. With 999 the last file is `_0999`. |
+| **File name prefix** | The part before `_<i>.jpg`. With `brewi` you get `downloads/brewi_0007.jpg`. |
+| **URL to download** | Incomplete URL. The loop appends `<i padded to 4 digits>.jpg`. With `https://…/brewi_` you get `https://…/brewi_0007.jpg`. |
 
-## What it does, step by step
+- **Download** (or Enter) checks the inputs and starts. The line under the inputs previews the first URL and
+  file name while you type, and shows any problem in red.
+- **Stop** ends the run right away. **Reset inputs** restores the configured defaults. **Open folder** opens `downloads/`.
+- The **status bar** shows the latest result, the running totals, the number being requested and the countdown to
+  the next request. The **viewer** shows the image that was just saved.
+- The window remembers what you last typed, in `ui.local.properties`, which is git-ignored.
 
-For each number `n` from `start` to `end`, inclusive:
+## Request log
 
-1. **Pad** the number to `padding` digits. With `padding=4`, `7` becomes `0007`.
-2. **Build the file name** from `file.template`, replacing `{n}`. For example, `name_{n}.jpg` becomes `name_0007.jpg`.
-3. **Build the URL** from `url.template`, replacing `{n}`. For example, `…/brewi_{n}.jpg` becomes `…/brewi_0007.jpg`.
-4. **Normalize the URL**: decode `%xx` escapes, keeping `+` as a plus sign, then re-encode the URL so it's valid.
-5. **Skip** the number if the file already exists and `overwrite=false`.
-6. **HTTP GET** the URL, sending any configured headers and cookies. Redirects are followed.
-   - **200**: the body is streamed to `<file>.part` and then moved to `downloads/<file>`, so an interrupted
-     download never leaves a half-written image. Output: `OK name_0007.jpg image/jpeg, 182.4 KB`.
-   - **404 or another 4xx**: that number doesn't exist. No file is created. Output: `MISSING`.
-   - **429, 5xx or a network error**: the request is retried up to `retries` times, with the wait doubling each
-     time (at least 1 s). If every attempt fails, the number is recorded as `FAILED` and the run **moves on**.
-7. **Wait** `delay.ms` (300 ms by default) before the next request.
-8. **Stop early** (optional) once `stop.after.misses` numbers in a row are missing.
+Every request is appended to **`download-requests.log`** in the repo root. The file is git-ignored.
 
-At the end it prints a summary of how many files were downloaded, skipped, missing and failed, followed by
-the URLs that failed. The exit code is `1` if any download failed, so the test button shows red in that case.
+```
+=== 2026-11-11 17:30:02 run started: 0000..0999 (1000 numbers), url https://…/brewi_{n}.jpg, file brewi_{n}.jpg, folder downloads, delay 1500+1500 ms
+2026-11-11 17:30:03  #0  DOWNLOADED 200  GET https://…/brewi_0000.jpg -> downloads/brewi_0000.jpg  image/jpeg, 182.4 KB
+2026-11-11 17:30:05  #1  NOT_FOUND  404  GET https://…/brewi_0001.jpg -> downloads/brewi_0001.jpg  HTTP 404
+=== 2026-11-11 18:12:40 run finished: 812 downloaded, 0 skipped, 188 not found, 0 failed
+```
+
+## Pace and privacy
+
+- **Delay:** 1.5 s plus a random 0 to 1.5 s between requests, so 1000 images take about 40 minutes. To go slower,
+  set `delay.ms` / `delay.jitter.ms`.
+- **Headers:** requests send a common browser User-Agent, `Accept` and `Accept-Language`, instead of
+  `Java-HttpClient/<version>`. They send no Referer and no cookies unless you configure them.
+- **Your IP is still visible** to the site unless you use a VPN, or set `proxy=host:port` to send requests through
+  an HTTP proxy (for example a VPN app's or Tor's local proxy). Java's TLS fingerprint also differs from a real
+  browser's. See [REQUIREMENTS.md](REQUIREMENTS.md#privacy-what-is-hidden-and-what-isnt) for the details.
+
+## What happens for each number
+
+For each number `i` from initial to last, inclusive:
+
+1. **Pad** it to 4 digits, so `7` becomes `0007`.
+2. **Build** the URL (`<url>0007.jpg`) and the file name (`<prefix>_0007.jpg`).
+3. **Normalize the URL**: decode `%xx` escapes, keeping `+` as a plus sign, then re-encode the URL so it's valid.
+4. **HTTP GET** it. Redirects are followed.
+   - **200**: the body is streamed to a temporary `.part` file and then moved into `downloads/`, so an
+     interrupted download never leaves half an image. The viewer shows the image.
+   - **404 or another 4xx**: that number doesn't exist. No file is created, and the result is `MISSING`.
+   - **429, 5xx or a network error**: the request is retried up to 2 more times, waiting at least 1 s and doubling
+     each time. If every attempt fails, the result is `FAILED` and the run **moves on**.
+5. **Log** the result and show it in the window.
+6. **Wait** for the randomized delay before the next request.
 
 ## Configuration
 
-Each layer overrides the one before it:
+The window takes the four inputs. Everything else comes from properties files. Each layer overrides the one before it:
 
 1. `src/main/resources/download.properties`: the committed defaults.
-2. `download.local.properties` in the project root: **your own values**. It's git-ignored.
-3. `config=path/to/other.properties`: an extra file, for example one per series.
-4. JVM properties with the `download.` prefix, for example `-Ddownload.end=9`.
-5. Arguments in the form `key=value`, for example `start=100 end=199`. Use them in `launch.json` `args` or on the command line.
+2. `download.local.properties` in the project root: **your own values**. It's git-ignored. Copy
+   `download.local.properties.example` to start.
+3. `config=path/to/other.properties`, JVM properties such as `-Ddownload.delay.ms=3000`, and `key=value` arguments.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `url.template` | `https://test.com/media/b/r/name/1000/brewi_{n}.jpg` | Remote URL. Must contain `{n}`. |
-| `file.template` | `name_{n}.jpg` | Local file name. Must contain `{n}`. |
-| `start` / `end` | `0` / `999` | Range of numbers, inclusive. |
+| `url.template` | `https://test.com/media/b/r/name/1000/brewi_{n}.jpg` | Remote URL. Must contain `{n}`. The window's URL field starts with this value, minus `{n}.jpg`. |
+| `file.template` | `name_{n}.jpg` | Local file name. Must contain `{n}`. The window's prefix field starts with this value, minus `_{n}.jpg`. |
+| `start` / `end` | `0` / `999` | Range of numbers, inclusive. These are the window's starting values. |
 | `padding` | `4` | Number of zero-padded digits (`0` means no padding). |
 | `output.dir` | `downloads` | Destination folder, relative to the working directory. |
-| `delay.ms` | `300` | Pause between requests. |
+| `delay.ms` | `1500` | Minimum pause between requests. |
+| `delay.jitter.ms` | `1500` | Random extra pause, from 0 up to this value, added to each request. |
 | `overwrite` | `true` | `false` skips files that already exist, which is useful to resume a run. |
 | `retries` | `2` | Extra attempts on network errors, 429 and 5xx responses. |
 | `timeout.seconds` | `30` | Connect and request timeout. |
 | `stop.after.misses` | `0` | Stop after this many 404s in a row (`0` means never stop). |
-| `header.<Name>` | — | Request header, for example `header.User-Agent=Mozilla/5.0` or `header.Referer=…`. |
+| `log.file` | `download-requests.log` | Request log, relative to the working directory. `none` turns it off. |
+| `proxy` | — | HTTP proxy as `host:port`, for example `127.0.0.1:8118`. |
+| `header.<Name>` | browser `User-Agent`, `Accept`, `Accept-Language` | Adds a request header, or replaces a default one. For example `header.Referer=…`. |
 | `cookie.<name>` | — | Cookie, for example `cookie.session_id=…`. |
 
-## Differences from the original `Testt#test`
+## Without the window
 
-The defaults reproduce the original behavior: the same range, padding, file names, folder and delay, and
-existing files are overwritten. These are the improvements:
+The console version, `Main`, uses the same engine and the same log, with values taken only from the properties:
 
-- **Dependencies:** RestAssured and JUnit 4 are replaced by `java.net.http.HttpClient`, with no runtime dependencies.
-- **Configuration:** URLs, the range and other settings are configurable, so you no longer edit code and comment lines in and out.
-- **Error handling:** one failed download no longer stops the whole loop, and temporary errors are retried.
-- **Downloads:** files are streamed and written atomically, not loaded fully into memory. A 404 no longer deletes an existing file.
-- **Output:** you get progress and a summary instead of `status is: true/false`.
-- **New options:** you can resume a run (`overwrite=false`) and stop early on a run of missing numbers.
-- **Testing:** real unit tests run against a local HTTP server. The download test that hits the network is
-  kept out of `mvn test`.
+```bash
+./mvnw test                                                # unit tests only (no network)
+./mvnw -q compile exec:java                                # opens the window
+./mvnw -q compile exec:java -Dexec.mainClass=org.ogm.imagedownload.Main -Dexec.args="start=0 end=9"
+./mvnw test -Pdownload                                     # console download via RunDownloadTest
+./mvnw -q package -DskipTests && java -jar target/image-download-1.0.0-SNAPSHOT.jar   # window from the jar
+```
+
+In VS Code these are also available as the *Console:* configurations in Run and Debug, and under Terminal → Run Task….
+`./mvnw` downloads Maven the first time it runs, so you don't need to install Maven yourself.
 
 ## Project layout
 
 ```
 src/main/java/org/ogm/imagedownload/
-  Main.java              entry point and console output
-  DownloadConfig.java    settings and how they're loaded
-  ImageDownloader.java   the download loop
+  DownloaderApp.java     the window: inputs, buttons, status bar, request list, background worker
+  ImageViewer.java       the "latest image" panel
+  ImageDownloader.java   the download loop (pause, retries, atomic writes, progress listener)
+  RequestLog.java        download-requests.log
+  DownloadConfig.java    settings, their defaults and how they're loaded
   DownloadResult.java    outcome for each number
+  Main.java              console version
 src/main/resources/download.properties   default settings
 src/test/java/org/ogm/imagedownload/
   ImageDownloaderTest.java   unit tests (local HTTP server)
-  RunDownloadTest.java       "run button" test that does the real download
-.vscode/                 launch configurations, tasks and settings
+  RunDownloadTest.java       console download as a "run button" test
+REQUIREMENTS.md          what the app must do, including privacy limits
+.vscode/                 launch configurations (F5 opens the window), tasks and settings
 ```
+
+Git-ignored files that live in the project root: `download.local.properties` (your config),
+`ui.local.properties` (last inputs typed in the window), `download-requests.log` and `downloads/`.
