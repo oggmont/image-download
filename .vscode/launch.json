@@ -1,0 +1,50 @@
+{
+  // Run and Debug panel (⇧⌘D) → pick one → ▶ (or F5).
+  // Values given in "args" override download.properties / download.local.properties.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Download images",
+      "request": "launch",
+      "mainClass": "org.ogm.imagedownload.Main",
+      "projectName": "image-download",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "Download images (resume, skip existing)",
+      "request": "launch",
+      "mainClass": "org.ogm.imagedownload.Main",
+      "projectName": "image-download",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "args": "overwrite=false"
+    },
+    {
+      "type": "java",
+      "name": "Download images (quick check: first 10)",
+      "request": "launch",
+      "mainClass": "org.ogm.imagedownload.Main",
+      "projectName": "image-download",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "args": "start=0 end=9"
+    },
+    {
+      "type": "java",
+      "name": "Download images (ask for range)",
+      "request": "launch",
+      "mainClass": "org.ogm.imagedownload.Main",
+      "projectName": "image-download",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "args": "start=${input:start} end=${input:end}"
+    }
+  ],
+  "inputs": [
+    { "id": "start", "type": "promptString", "description": "First number", "default": "0" },
+    { "id": "end", "type": "promptString", "description": "Last number (inclusive)", "default": "999" }
+  ]
+}

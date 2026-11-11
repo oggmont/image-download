@@ -1,0 +1,21 @@
+# Build output
+target/
+
+# Downloaded images
+downloads/
+
+# Personal config (real URLs, cookies, tokens)
+download.local.properties
+
+# Claude Code
+CLAUDE.md
+.claude/
+
+# IDE / OS
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+.DS_Store

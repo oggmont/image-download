@@ -1,0 +1,26 @@
+{
+  // Terminal → Run Task…
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Download images (Maven)",
+      "type": "shell",
+      "command": "./mvnw -q compile exec:java",
+      "problemMatcher": []
+    },
+    {
+      "label": "Unit tests",
+      "type": "shell",
+      "command": "./mvnw test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build jar",
+      "type": "shell",
+      "command": "./mvnw -q package -DskipTests",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

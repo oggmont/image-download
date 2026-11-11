@@ -1,0 +1,15 @@
+# Copy this file to download.local.properties (git-ignored) and edit it.
+# Only the keys you set override the defaults in src/main/resources/download.properties.
+
+url.template=https://test.com/media/b/r/name/1000/brewi_{n}.jpg
+# second series from the original code:
+# url.template=https://test.com/media/v/e/name-19/1000/name-19_{n}.jpg
+file.template=name_{n}.jpg
+start=0
+end=999
+output.dir=downloads
+
+# overwrite=false
+# stop.after.misses=20
+# header.User-Agent=Mozilla/5.0
+# cookie.session_id=...
