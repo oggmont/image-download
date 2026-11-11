@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * The "run button" version of the original Testt#test: click the green ▶ next to this method in VS Code.
+ * The "run button" version of the original Testt#test: run this method from your IDE.
  *
  * <p>It uses the same config as {@link Main} (download.properties + your download.local.properties).
  * Tagged {@code manual} so {@code mvn test} skips it; run it from Maven with {@code mvn test -Pdownload}.

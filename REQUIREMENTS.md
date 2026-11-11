@@ -1,15 +1,14 @@
 # Requirements
 
-A one-window desktop app that downloads a numbered image series. One user, one machine, launched from VS Code.
+A one-window desktop app that downloads a numbered image series. One user, one machine.
 
 ## User flow
 
-1. Open the repo in VS Code.
-2. Press **F5** (or ▶ in Run and Debug, "Image Downloader (UI)"). The window opens.
-3. Fill in the four inputs and click **Download**.
-4. The loop runs. After each request the status bar shows the result, the request list grows, and the viewer
+1. Start the app (`./mvnw -q compile exec:java`, or run `DownloaderApp.main` from any IDE). The window opens.
+2. Fill in the four inputs and click **Download**.
+3. The loop runs. After each request the status bar shows the result, the request list grows, and the viewer
    shows the image that was just saved. New files appear in `downloads/` as they arrive.
-5. **Stop** ends the run early. **Reset inputs** puts the configured defaults back.
+4. **Stop** ends the run early. **Reset inputs** puts the configured defaults back.
 
 ## The loop
 
@@ -30,7 +29,7 @@ for (int i = initialI; i <= lastI; i++) {
 
 | # | Requirement | Where |
 |---|---|---|
-| F1 | Launch the window with one click from VS Code. | `.vscode/launch.json` (first configuration), `DownloaderApp.main` |
+| F1 | Launch the window with a single command, no IDE required. | `./mvnw -q compile exec:java`, `DownloaderApp.main` |
 | F2 | Input **Initial i**: first number of the loop (whole number ≥ 0). | form |
 | F3 | Input **Last i**: last number, inclusive, ≥ initial i. | form |
 | F4 | Input **File name prefix**: the part before `_<i>.jpg`. No `/`, `\`, or leading dot. | form |

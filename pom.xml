@@ -40,7 +40,7 @@
                 <version>3.5.2</version>
                 <configuration>
                     <!-- The "manual" test really downloads files from the internet.
-                         It runs only from the IDE button or with: mvn test -Pdownload -->
+                         It runs only from an IDE or with: mvn test -Pdownload -->
                     <excludedGroups>manual</excludedGroups>
                 </configuration>
             </plugin>

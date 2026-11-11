@@ -44,7 +44,7 @@ import javax.swing.text.BadLocationException;
 import org.ogm.imagedownload.DownloadResult.Status;
 
 /**
- * The window. In VS Code press F5 (Run and Debug → "Image Downloader (UI)") or click "Run" above {@link #main}.
+ * The window. Start it with {@code ./mvnw -q compile exec:java} or by running {@link #main} from any IDE.
  *
  * <p>Inputs are the four values of the original loop: initial i, last i, the file name prefix and the
  * incomplete URL that {@code <padded i>.jpg} is appended to. Everything else (delay, retries, headers, proxy,

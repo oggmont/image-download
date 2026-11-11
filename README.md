@@ -1,20 +1,19 @@
 # image-download
 
 A small desktop window that downloads a numbered series of images, such as `image_0000.jpg` up to
-`image_0999.jpg`, into `downloads/`. You launch it with one click from VS Code, type four values and click
+`image_0999.jpg`, into `downloads/`. You start it with one command, type four values and click
 **Download**. While it runs, it shows each result and the latest image.
 
 It needs Java 17 or newer. It has no runtime dependencies: the window is Swing and HTTP uses the JDK's built-in client.
 The full list of requirements, including what the privacy measures do and don't cover, is in
 [REQUIREMENTS.md](REQUIREMENTS.md).
 
-## Quick start (VS Code)
+## Quick start
 
-1. Install a JDK, version 17 or newer (`java -version`), and the **Extension Pack for Java**
-   (`vscjava.vscode-java-pack`). VS Code suggests the extension pack when you open the folder.
-2. Open this folder in VS Code and wait for "Java: Ready" in the status bar.
-3. Press **F5**. "Image Downloader (UI)" is the first configuration in Run and Debug (⇧⌘D), so it's the one that runs.
-   You can also click **Run** above `main` in `DownloaderApp.java`.
+1. Install a JDK, version 17 or newer (`java -version`).
+2. From this folder, run `./mvnw -q compile exec:java` (`mvnw.cmd` on Windows). The window opens.
+
+From an IDE, run `org.ogm.imagedownload.DownloaderApp` as a Java application.
 
 ## The window
 
@@ -125,7 +124,6 @@ The console version, `Main`, uses the same engine and the same log, with values 
 ./mvnw -q package -DskipTests && java -jar target/image-download-1.0.0-SNAPSHOT.jar   # window from the jar
 ```
 
-In VS Code these are also available as the *Console:* configurations in Run and Debug, and under Terminal → Run Task….
 `./mvnw` downloads Maven the first time it runs, so you don't need to install Maven yourself.
 
 ## Project layout
@@ -142,7 +140,6 @@ src/main/java/org/ogm/imagedownload/
 src/main/resources/download.properties   default settings
 src/test/java/org/ogm/imagedownload/
   ImageDownloaderTest.java   unit tests (local HTTP server)
-  RunDownloadTest.java       console download as a "run button" test
+  RunDownloadTest.java       console download as a test you can run from an IDE
 REQUIREMENTS.md          what the app must do, including privacy limits
-.vscode/                 launch configurations, tasks and settings
 ```
