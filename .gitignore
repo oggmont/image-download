@@ -15,6 +15,7 @@ Prompts.md
 .claude/
 
 # IDE / OS
+.vscode/
 .idea/
 *.iml
 .classpath

@@ -13,7 +13,7 @@ A one-window desktop app that downloads a numbered image series. One user, one m
 
 ## The loop
 
-The window runs the original loop, with two bugs fixed (see below):
+The original loop that made this project possible:
 
 ```java
 for (int i = initialI; i <= lastI; i++) {
@@ -21,14 +21,10 @@ for (int i = initialI; i <= lastI; i++) {
     String downloadFileName = prefix + "_" + format + ".jpg";
     String url = urlToDownload + format + ".jpg";
     download(url, "downloads/" + downloadFileName);
-    pause();   // 1.5 to 3.0 s, random
+    pause();
 }
 ```
 
-Fixed compared with the original snippet:
-- The original did `urlToDownload += format + ".jpg"`, so each URL kept the previous ones
-  (`…_0000.jpg0001.jpg`). Now every URL is built fresh from the base.
-- The original stopped at `i < lastI`. In the window, **Last i is inclusive**: 999 means the last file is `_0999`.
 
 ## Functional requirements
 
