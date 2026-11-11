@@ -90,14 +90,14 @@ class ImageDownloaderTest {
 
     @Test
     void downloadsSeriesWithPaddedNamesLikeTheOriginal() throws IOException {
-        files.put("/media/brewi_0000.jpg", bytes("zero"));
-        files.put("/media/brewi_0002.jpg", bytes("two"));
+        files.put("/media/image_0000.jpg", bytes("zero"));
+        files.put("/media/image_0002.jpg", bytes("two"));
 
-        var summary = downloader(config(base + "/media/brewi_{n}.jpg", 0, 3, true, 0, Map.of()))
+        var summary = downloader(config(base + "/media/image_{n}.jpg", 0, 3, true, 0, Map.of()))
                 .run(r -> { });
 
-        assertEquals(List.of("/media/brewi_0000.jpg", "/media/brewi_0001.jpg", "/media/brewi_0002.jpg",
-                "/media/brewi_0003.jpg"), requested);
+        assertEquals(List.of("/media/image_0000.jpg", "/media/image_0001.jpg", "/media/image_0002.jpg",
+                "/media/image_0003.jpg"), requested);
         assertArrayEquals(bytes("zero"), Files.readAllBytes(out.resolve("name_0000.jpg")));
         assertArrayEquals(bytes("two"), Files.readAllBytes(out.resolve("name_0002.jpg")));
         assertFalse(Files.exists(out.resolve("name_0001.jpg")), "404 must not create a file");
@@ -186,7 +186,7 @@ class ImageDownloaderTest {
         DownloadConfig c = DownloadConfig.fromProperties(new java.util.Properties());
         assertEquals(1000, c.count());
         assertEquals("name_0230.jpg", c.fileNameFor(230));
-        assertEquals("https://test.com/media/b/r/name/1000/brewi_0230.jpg", c.urlFor(230));
+        assertEquals("https://test.com/media/b/r/name/1000/image_0230.jpg", c.urlFor(230));
         assertEquals(Path.of("downloads"), c.outputDir());
         assertEquals(Duration.ofMillis(1500), c.delay());
         assertEquals(Duration.ofMillis(1500), c.delayJitter());
@@ -220,9 +220,9 @@ class ImageDownloaderTest {
     void uiInputsMapToTheOriginalLoop() {
         // urlToDownload + String.format("%04d", i) + ".jpg"  and  prefix + "_" + format + ".jpg"
         DownloadConfig c = DownloadConfig.fromProperties(new java.util.Properties())
-                .forRun("https://h.com/x/brewi_", "brewi", 5, 7);
-        assertEquals("https://h.com/x/brewi_0005.jpg", c.urlFor(5));
-        assertEquals("brewi_0007.jpg", c.fileNameFor(7));
+                .forRun("https://h.com/x/image_", "image", 5, 7);
+        assertEquals("https://h.com/x/image_0005.jpg", c.urlFor(5));
+        assertEquals("image_0007.jpg", c.fileNameFor(7));
         assertEquals(3, c.count());
         assertEquals("a_{n}.jpg", DownloadConfig.fileTemplateFromPrefix("a_"));
         assertEquals("a", DownloadConfig.filePrefixFromTemplate(DownloadConfig.fileTemplateFromPrefix("a")));

@@ -11,6 +11,7 @@ download-requests.log
 
 # Claude Code
 CLAUDE.md
+Prompts.md
 .claude/
 
 # IDE / OS

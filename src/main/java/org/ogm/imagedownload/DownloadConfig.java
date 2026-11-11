@@ -104,7 +104,7 @@ public record DownloadConfig(
                 cookies, proxy, logFile);
     }
 
-    /** {@code https://h/brewi_} → {@code https://h/brewi_{n}.jpg}. A value that already has {@code {n}} is kept. */
+    /** {@code https://h/image_} → {@code https://h/image_{n}.jpg}. A value that already has {@code {n}} is kept. */
     public static String urlTemplateFromBase(String base) {
         String b = base.trim();
         return b.contains(PLACEHOLDER) ? b : b + PLACEHOLDER + ".jpg";
@@ -148,7 +148,7 @@ public record DownloadConfig(
         }
         String log = get(p, "log.file", "download-requests.log");
         return new DownloadConfig(
-                get(p, "url.template", "https://test.com/media/b/r/name/1000/brewi_{n}.jpg"),
+                get(p, "url.template", "https://test.com/media/b/r/name/1000/image_{n}.jpg"),
                 get(p, "file.template", "name_{n}.jpg"),
                 Integer.parseInt(get(p, "start", "0")),
                 Integer.parseInt(get(p, "end", "999")),

@@ -1,7 +1,7 @@
 # image-download
 
-A small desktop window that downloads a numbered series of images, such as `brewi_0000.jpg` up to
-`brewi_0999.jpg`, into `downloads/`. You launch it with one click from VS Code, type four values and click
+A small desktop window that downloads a numbered series of images, such as `image_0000.jpg` up to
+`image_0999.jpg`, into `downloads/`. You launch it with one click from VS Code, type four values and click
 **Download**. While it runs, it shows each result and the latest image.
 
 It needs Java 17 or newer. It has no runtime dependencies: the window is Swing and HTTP uses the JDK's built-in client.
@@ -22,16 +22,16 @@ The full list of requirements, including what the privacy measures do and don't 
 ┌ Inputs ──────────────────────────────────────────────────────────────────────┐
 │ Initial i         [0      ]  first number of the loop                        │
 │ Last i            [999    ]  last number, inclusive                          │
-│ File name prefix  [brewi  ]  saved as <prefix>_0000.jpg in downloads/        │
-│ URL to download   [https://…/1000/brewi_ ]  0000.jpg, 0001.jpg … is appended │
-│ First: GET https://…/brewi_0000.jpg → downloads/brewi_0000.jpg (1000 images) │
+│ File name prefix  [image  ]  saved as <prefix>_0000.jpg in downloads/        │
+│ URL to download   [https://…/1000/image_ ]  0000.jpg, 0001.jpg … is appended │
+│ First: GET https://…/image_0000.jpg → downloads/image_0000.jpg (1000 images) │
 │ [Download] [Stop] [Reset inputs] [Open folder]                               │
 ├ Requests ─────────────────────────────┬ Latest image ────────────────────────┤
-│ OK       brewi_0000.jpg  image/jpeg…  │                                      │
-│ MISSING  brewi_0001.jpg  HTTP 404     │            (image preview)           │
-│ OK       brewi_0002.jpg  image/jpeg…  │  brewi_0002.jpg · 1000×1500 · 182 KB │
+│ OK       image_0000.jpg  image/jpeg…  │                                      │
+│ MISSING  image_0001.jpg  HTTP 404     │            (image preview)           │
+│ OK       image_0002.jpg  image/jpeg…  │  image_0002.jpg · 1000×1500 · 182 KB │
 ├───────────────────────────────────────┴──────────────────────────────────────┤
-│ OK #0002 brewi_0002.jpg (image/jpeg, 182.4 KB) | next request in 2.3 s  3/1000│
+│ OK #0002 image_0002.jpg (image/jpeg, 182.4 KB) | next request in 2.3 s  3/1000│
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -39,8 +39,8 @@ The full list of requirements, including what the privacy measures do and don't 
 |---|---|
 | **Initial i** | First number of the loop. |
 | **Last i** | Last number, **inclusive**. With 999 the last file is `_0999`. |
-| **File name prefix** | The part before `_<i>.jpg`. With `brewi` you get `downloads/brewi_0007.jpg`. |
-| **URL to download** | Incomplete URL. The loop appends `<i padded to 4 digits>.jpg`. With `https://…/brewi_` you get `https://…/brewi_0007.jpg`. |
+| **File name prefix** | The part before `_<i>.jpg`. With `image` you get `downloads/image_0007.jpg`. |
+| **URL to download** | Incomplete URL. The loop appends `<i padded to 4 digits>.jpg`. With `https://…/image_` you get `https://…/image_0007.jpg`. |
 
 - **Download** (or Enter) checks the inputs and starts. The line under the inputs previews the first URL and
   file name while you type, and shows any problem in red.
@@ -54,9 +54,9 @@ The full list of requirements, including what the privacy measures do and don't 
 Every request is appended to **`download-requests.log`** in the repo root. The file is git-ignored.
 
 ```
-=== 2026-11-11 17:30:02 run started: 0000..0999 (1000 numbers), url https://…/brewi_{n}.jpg, file brewi_{n}.jpg, folder downloads, delay 1500+1500 ms
-2026-11-11 17:30:03  #0  DOWNLOADED 200  GET https://…/brewi_0000.jpg -> downloads/brewi_0000.jpg  image/jpeg, 182.4 KB
-2026-11-11 17:30:05  #1  NOT_FOUND  404  GET https://…/brewi_0001.jpg -> downloads/brewi_0001.jpg  HTTP 404
+=== 2026-11-11 17:30:02 run started: 0000..0999 (1000 numbers), url https://…/image_{n}.jpg, file image_{n}.jpg, folder downloads, delay 1500+1500 ms
+2026-11-11 17:30:03  #0  DOWNLOADED 200  GET https://…/image_0000.jpg -> downloads/image_0000.jpg  image/jpeg, 182.4 KB
+2026-11-11 17:30:05  #1  NOT_FOUND  404  GET https://…/image_0001.jpg -> downloads/image_0001.jpg  HTTP 404
 === 2026-11-11 18:12:40 run finished: 812 downloaded, 0 skipped, 188 not found, 0 failed
 ```
 
@@ -97,7 +97,7 @@ The window takes the four inputs. Everything else comes from properties files. E
 
 | Key | Default | Meaning |
 |---|---|---|
-| `url.template` | `https://test.com/media/b/r/name/1000/brewi_{n}.jpg` | Remote URL. Must contain `{n}`. The window's URL field starts with this value, minus `{n}.jpg`. |
+| `url.template` | `https://test.com/media/b/r/name/1000/image_{n}.jpg` | Remote URL. Must contain `{n}`. The window's URL field starts with this value, minus `{n}.jpg`. |
 | `file.template` | `name_{n}.jpg` | Local file name. Must contain `{n}`. The window's prefix field starts with this value, minus `_{n}.jpg`. |
 | `start` / `end` | `0` / `999` | Range of numbers, inclusive. These are the window's starting values. |
 | `padding` | `4` | Number of zero-padded digits (`0` means no padding). |
